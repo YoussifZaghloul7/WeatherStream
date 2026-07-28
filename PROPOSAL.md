@@ -2,39 +2,38 @@
 WeatherStream
 
 ## Team Members
-Youssef Zaghloul (solo)
+Youssef Zaghloul
 
 ## Project Description
-A real-time weather data pipeline. It pulls live weather readings for
-Cairo and the North Coast from a free public API, streams them through
-Kafka, cleans/transforms the data, stores it in PostgreSQL, and displays
-it on a live dashboard with temperature/humidity/wind trends and an alert
-for extreme weather conditions.
+WeatherStream is a real-time weather data pipeline. It collects live
+weather data for Cairo and the North Coast from a free public API. The
+data moves through Kafka, gets cleaned, and is saved in a PostgreSQL
+database. A live dashboard shows temperature, humidity, and wind charts,
+and gives an alert when the weather is extreme.
 
-Kept the scope to 2 locations since I'm working on this alone and wanted
-something I could actually finish well instead of something half-done.
+I chose only two cities to keep the project small and finish it well.
 
 ## Tools
-- Python (ingestion + ETL scripts)
-- Apache Kafka (streaming, Dockerized)
-- PostgreSQL (storage)
-- Streamlit + Plotly (dashboard)
-- Docker Compose (runs everything locally)
-- GitHub
+- Python for the data scripts
+- Apache Kafka for streaming
+- PostgreSQL for storage
+- Streamlit and Plotly for the dashboard
+- Docker Compose to run everything
+- GitHub for version control
 
 ## Workflow
-1. Producer script polls the Open-Meteo API every minute for Cairo and the
-   North Coast, sends each reading to Kafka as JSON.
-2. Kafka buffers/streams the messages.
-3. Consumer script reads from Kafka, cleans and transforms the data
-   (readable weather descriptions, extreme weather flags), writes it to
-   Postgres.
-4. Postgres holds both raw and processed tables.
-5. Dashboard reads from Postgres and shows live charts, refreshing
-   automatically.
+1. A Python script checks the Open-Meteo API every minute for Cairo and
+   the North Coast, and sends each reading to Kafka.
+2. Kafka holds and moves the messages.
+3. Another Python script reads the messages from Kafka, cleans the data,
+   adds a weather description and an extreme weather flag, and saves it
+   in PostgreSQL.
+4. PostgreSQL stores both the raw data and the cleaned data.
+5. The dashboard reads from PostgreSQL and shows live charts that update
+   on their own.
 
 ```
-Open-Meteo API -> Producer -> Kafka -> Consumer (ETL) -> Postgres -> Dashboard
+Open-Meteo API -> Producer -> Kafka -> Consumer (ETL) -> PostgreSQL -> Dashboard
 ```
 
 GitHub: https://github.com/YoussifZaghloul7/WeatherStream
