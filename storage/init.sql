@@ -45,3 +45,18 @@ CREATE TABLE IF NOT EXISTS weather_alerts (
 
 CREATE INDEX IF NOT EXISTS idx_weather_alerts_city_time
     ON weather_alerts (city, observed_at DESC);
+
+-- traffic readings, cairo only. no clean "observed_at" from the api like
+-- weather has, so just stamping it with when we polled it
+CREATE TABLE IF NOT EXISTS traffic_processed (
+    id                     SERIAL PRIMARY KEY,
+    location               VARCHAR(100) NOT NULL,
+    current_speed_kmh      DOUBLE PRECISION,
+    free_flow_speed_kmh    DOUBLE PRECISION,
+    congestion_pct         DOUBLE PRECISION,
+    road_closure           BOOLEAN NOT NULL DEFAULT FALSE,
+    polled_at              TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_traffic_processed_location_time
+    ON traffic_processed (location, polled_at DESC);

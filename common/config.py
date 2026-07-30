@@ -6,6 +6,7 @@ load_dotenv()
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_TOPIC_RAW = os.getenv("KAFKA_TOPIC_RAW", "weather-raw")
+KAFKA_TOPIC_TRAFFIC = os.getenv("KAFKA_TOPIC_TRAFFIC", "traffic-raw")
 
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
@@ -26,6 +27,16 @@ EXTREME_TEMP_HIGH_C = 40.0
 EXTREME_TEMP_LOW_C = 0.0
 EXTREME_WIND_KMH = 60.0
 EXTREME_PRECIPITATION_MM = 10.0
+
+# traffic, to compare against weather. get a free key at developer.tomtom.com
+TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "")
+TRAFFIC_POLL_INTERVAL_SECONDS = int(os.getenv("TRAFFIC_POLL_INTERVAL_SECONDS", "60"))
+
+# cairo only - tomtom's traffic data is sparse on the north coast since
+# it's mostly a summer resort, not a real road network
+TRAFFIC_LOCATIONS = [
+    ("Cairo", 30.0444, 31.2357),
+]
 
 
 def postgres_dsn() -> str:
