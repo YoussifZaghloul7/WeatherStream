@@ -118,10 +118,12 @@ else:
     fig_combo.add_trace(go.Scatter(
         x=cairo_weather["observed_at"], y=cairo_weather["temperature_c"],
         name="Temperature (°C)", yaxis="y1", mode="lines+markers",
+        line=dict(color="#FF8C42"), marker=dict(color="#FF8C42"),
     ))
     fig_combo.add_trace(go.Scatter(
         x=traffic_df["polled_at"], y=traffic_df["congestion_pct"],
         name="Traffic congestion (%)", yaxis="y2", mode="lines+markers",
+        line=dict(color="#4A90D9"), marker=dict(color="#4A90D9"),
     ))
     fig_combo.update_layout(
         xaxis=dict(title="Time"),
