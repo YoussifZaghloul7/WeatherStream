@@ -6,6 +6,7 @@ import sys
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from sqlalchemy import create_engine
 from streamlit_autorefresh import st_autorefresh
@@ -32,6 +33,17 @@ def load_processed(hours: int) -> pd.DataFrame:
         FROM weather_processed
         WHERE observed_at >= now() - interval '{hours} hours'
         ORDER BY observed_at ASC
+    """
+    return pd.read_sql(query, get_engine())
+
+
+@st.cache_data(ttl=25)
+def load_traffic(hours: int) -> pd.DataFrame:
+    query = f"""
+        SELECT location, current_speed_kmh, free_flow_speed_kmh, congestion_pct, polled_at
+        FROM traffic_processed
+        WHERE polled_at >= now() - interval '{hours} hours'
+        ORDER BY polled_at ASC
     """
     return pd.read_sql(query, get_engine())
 
@@ -92,6 +104,32 @@ with col_b:
 st.subheader("City comparison (latest reading)")
 fig_bar = px.bar(latest.reset_index(), x="city", y="temperature_c", color="city")
 st.plotly_chart(fig_bar, use_container_width=True)
+
+st.subheader("Traffic vs weather (Cairo)")
+traffic_df = load_traffic(hours_back)
+cairo_weather = df[df["city"] == "Cairo"]
+if traffic_df.empty:
+    st.info(
+        "No traffic data yet. Set TOMTOM_API_KEY in .env and run "
+        "`python ingestion/traffic_producer.py` and `python processing/traffic_consumer.py`."
+    )
+else:
+    fig_combo = go.Figure()
+    fig_combo.add_trace(go.Scatter(
+        x=cairo_weather["observed_at"], y=cairo_weather["temperature_c"],
+        name="Temperature (°C)", yaxis="y1", mode="lines+markers",
+    ))
+    fig_combo.add_trace(go.Scatter(
+        x=traffic_df["polled_at"], y=traffic_df["congestion_pct"],
+        name="Traffic congestion (%)", yaxis="y2", mode="lines+markers",
+    ))
+    fig_combo.update_layout(
+        xaxis=dict(title="Time"),
+        yaxis=dict(title="Temperature (°C)"),
+        yaxis2=dict(title="Congestion (%)", overlaying="y", side="right"),
+        legend=dict(orientation="h", y=1.1),
+    )
+    st.plotly_chart(fig_combo, use_container_width=True)
 
 st.subheader("⚠️ Extreme weather alerts")
 alerts = load_alerts()
