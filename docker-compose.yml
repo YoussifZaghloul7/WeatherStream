@@ -54,6 +54,33 @@ services:
     depends_on:
       - kafka
 
+  # orchestration layer - schedules a health check + a db backup job.
+  # sits alongside the pipeline, doesn't touch the actual data path
+  kestra:
+    image: kestra/kestra:latest
+    container_name: weatherstream-kestra
+    command: server local
+    user: root
+    ports:
+      - "8085:8080"
+    environment:
+      KESTRA_CONFIGURATION: |
+        kestra:
+          server:
+            basicAuth:
+              enabled: false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - kestra_data:/app/storage
+    depends_on:
+      - postgres
+      - kafka
+
 volumes:
   kafka_data:
   pg_data:
+  kestra_data:
+
+networks:
+  default:
+    name: weatherstream_net
