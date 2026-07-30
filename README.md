@@ -39,6 +39,18 @@ idea as how Airflow was used in the CardShield example project - it
 monitors and does maintenance, it doesn't touch the actual weather data
 flowing through Kafka/Postgres.
 
+There's also a small side pipeline comparing traffic to weather, for Cairo
+only:
+
+```
+TomTom API  -->  traffic_producer.py  -->  Kafka (traffic-raw)  -->  traffic_consumer.py  -->  Postgres
+```
+
+Same pattern as the weather side, just a different API and topic. Needs a
+free TomTom API key (see below). Only doing Cairo for this since the North
+Coast doesn't really have enough of a road network for TomTom to report
+useful traffic data on.
+
 ## Tools used
 
 - Python (ingestion + processing scripts)
@@ -46,6 +58,7 @@ flowing through Kafka/Postgres.
 - PostgreSQL - storage
 - Streamlit + Plotly - dashboard
 - Kestra - orchestration (scheduled health check + db backup)
+- TomTom Traffic API - free traffic data, compared against weather
 - Docker Compose - runs Kafka/Postgres/Kafdrop/Kestra so I don't have to
   install any of that stuff natively
 - GitHub obviously
@@ -67,7 +80,8 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-then 3 terminals:
+get a free API key at developer.tomtom.com (no credit card needed) and put
+it in `.env` as `TOMTOM_API_KEY=...`, then:
 
 ```bash
 # 1
@@ -78,6 +92,12 @@ python processing/consumer.py
 
 # 3
 streamlit run dashboard/app.py
+
+# 4 (optional, only if you set TOMTOM_API_KEY)
+python ingestion/traffic_producer.py
+
+# 5 (optional, pair of #4)
+python processing/traffic_consumer.py
 ```
 
 dashboard shows up at localhost:8501, Kafdrop is at localhost:9001.
@@ -98,8 +118,10 @@ WeatherStream/
 ├── docker-compose.yml      -> kafka, postgres, kafdrop, kestra
 ├── requirements.txt
 ├── common/config.py        -> cities + settings live here
-├── ingestion/producer.py   -> pulls weather, sends to kafka
-├── processing/consumer.py  -> etl, writes to postgres
+├── ingestion/producer.py         -> pulls weather, sends to kafka
+├── ingestion/traffic_producer.py -> pulls cairo traffic, sends to kafka
+├── processing/consumer.py        -> weather etl, writes to postgres
+├── processing/traffic_consumer.py -> traffic etl, writes to postgres
 ├── storage/init.sql        -> db schema
 ├── kestra/flows/           -> scheduled health check + db backup
 └── dashboard/app.py        -> the actual dashboard
