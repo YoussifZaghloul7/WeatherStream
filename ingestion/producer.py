@@ -1,5 +1,5 @@
 # ingestion side of the pipeline - just polls open-meteo and dumps
-# readings into kafka. nothing fancy, this is the data ingestion tool part
+# readings into kafka. (data ingestion tool part)
 
 
 import json
