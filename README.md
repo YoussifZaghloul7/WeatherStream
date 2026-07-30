@@ -32,14 +32,22 @@ Open-Meteo API  -->  producer.py  -->  Kafka (weather-raw)  -->  consumer.py  --
 There's also Kafdrop running in Docker so you can actually see the messages
 sitting in the Kafka topic, useful for the demo.
 
+On top of that, Kestra sits alongside the pipeline (not in the data path)
+and runs two scheduled jobs every 5 minutes: a health check that confirms
+the pipeline is actually producing fresh data, and a Postgres backup. Same
+idea as how Airflow was used in the CardShield example project - it
+monitors and does maintenance, it doesn't touch the actual weather data
+flowing through Kafka/Postgres.
+
 ## Tools used
 
 - Python (ingestion + processing scripts)
 - Apache Kafka - streaming
 - PostgreSQL - storage
 - Streamlit + Plotly - dashboard
-- Docker Compose - runs Kafka/Postgres/Kafdrop so I don't have to install
-  any of that stuff natively
+- Kestra - orchestration (scheduled health check + db backup)
+- Docker Compose - runs Kafka/Postgres/Kafdrop/Kestra so I don't have to
+  install any of that stuff natively
 - GitHub obviously
 
 ## Running it
@@ -74,18 +82,26 @@ streamlit run dashboard/app.py
 
 dashboard shows up at localhost:8501, Kafdrop is at localhost:9001.
 
+Kestra's UI is at localhost:8085 (first time you open it, it'll ask you to
+create a local admin account - that's just for this instance, nothing gets
+sent anywhere). The flow lives in `kestra/flows/weatherstream_monitoring.yml`
+and gets uploaded through the Kestra UI (Flows -> Create -> paste the YAML)
+or via its API. It's on a 5-minute schedule but you can also just hit
+"Execute" in the UI to run it on demand for a demo.
+
 to stop everything: `docker compose down`
 
 ## Project layout
 
 ```
 WeatherStream/
-├── docker-compose.yml      -> kafka, postgres, kafdrop
+├── docker-compose.yml      -> kafka, postgres, kafdrop, kestra
 ├── requirements.txt
 ├── common/config.py        -> cities + settings live here
 ├── ingestion/producer.py   -> pulls weather, sends to kafka
 ├── processing/consumer.py  -> etl, writes to postgres
 ├── storage/init.sql        -> db schema
+├── kestra/flows/           -> scheduled health check + db backup
 └── dashboard/app.py        -> the actual dashboard
 ```
 
