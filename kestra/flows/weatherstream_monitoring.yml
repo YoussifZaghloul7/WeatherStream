@@ -1,0 +1,46 @@
+id: weatherstream-monitoring
+namespace: weatherstream
+
+description: |
+  Orchestration layer for WeatherStream. Doesn't touch the actual data path
+  (Kafka -> consumer -> Postgres keeps running on its own) - this just
+  periodically checks the pipeline is producing fresh data, and backs up
+  the database. Same idea as how Airflow was used in the CardShield
+  example: sits alongside the streaming path as a control-plane job.
+
+tasks:
+  - id: check-latest-data
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      image: postgres:16
+      networkMode: weatherstream_net
+    commands:
+      - |
+        LATEST=$(psql "postgresql://weather:weather@postgres:5432/weatherstream" -t -A -c "SELECT extract(epoch from now() - max(processed_at))::int FROM weather_processed;")
+        if [ -z "$LATEST" ]; then
+          echo "No weather data in the database yet"
+          exit 1
+        fi
+        echo "Seconds since the last reading: $LATEST"
+        if [ "$LATEST" -gt 300 ]; then
+          echo "WARNING: no fresh data in the last 5 minutes - producer/consumer may be down"
+          exit 1
+        fi
+        echo "Pipeline healthy - data is fresh"
+
+  - id: backup-database
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      image: postgres:16
+      networkMode: weatherstream_net
+    outputFiles:
+      - "weatherstream_backup.sql"
+    commands:
+      - pg_dump "postgresql://weather:weather@postgres:5432/weatherstream" -f weatherstream_backup.sql
+
+triggers:
+  - id: every-5-minutes
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "*/5 * * * *"
